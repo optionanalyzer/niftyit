@@ -223,7 +223,7 @@ if not active_strikes_df.empty:
     ist = pytz.timezone('Asia/Kolkata')
     current_time_ist = datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S IST')
     
-    st.markdown(f"#### Option Greeks (ATM ± 5 Strikes) | ⏱️ {current_time_ist}")
+    st.markdown(f"#### Option Greek | ⏱️ {current_time_ist}")
     
     required_cols = {
         'call_options.option_greeks.iv': 'Call IV',
@@ -259,7 +259,7 @@ else:
 # -------------------------------------------------------------------
 if chain_df is not None and live_pcr is not None and live_pcr != 99.9:
     st.markdown("---")
-    st.markdown("#### 🤖 Smart Momentum Engine")
+    st.markdown("#### 🤖 Smart Trade Engine")
     
     try:
         current_vix = float(live_vix)
@@ -441,7 +441,7 @@ if not active_strikes_df.empty:
     chart_col1, chart_col2 = st.columns(2)
 
     with chart_col1:
-        st.markdown("<h5 style='text-align: center;'>OI BUILDUP</h5>", unsafe_allow_html=True)
+        st.markdown("<h5 style='text-align: center;'>POSITION BUILDUP</h5>", unsafe_allow_html=True)
         fig_oi = go.Figure()
         fig_oi.add_trace(go.Bar(
             x=active_strikes_df['strike_price'], 
@@ -463,7 +463,7 @@ if not active_strikes_df.empty:
         st.plotly_chart(fig_oi, use_container_width=True, config={'displayModeBar': False}, key="chart_oi_buildup")
 
     with chart_col2:
-        st.markdown("<h5 style='text-align: center;'>CHANGE IN OI (SESSION)</h5>", unsafe_allow_html=True)
+        st.markdown("<h5 style='text-align: center;'>POSITION SHIFT (INTRADAY)</h5>", unsafe_allow_html=True)
         fig_chg = go.Figure()
         fig_chg.add_trace(go.Bar(
             x=active_strikes_df['strike_price'], 
@@ -544,7 +544,7 @@ if not active_strikes_df.empty:
     row6_col1, row6_col2 = st.columns(2)
 
     with row6_col1:
-        st.markdown("<h5 style='text-align: center;'>PCR TREND</h5>", unsafe_allow_html=True)
+        st.markdown("<h5 style='text-align: center;'>MARKET TREND</h5>", unsafe_allow_html=True)
         fig_pcr = go.Figure()
         fig_pcr.add_trace(go.Scatter(
             x=st.session_state.history_df['Time_IST'], y=st.session_state.history_df['PCR'],
@@ -557,7 +557,7 @@ if not active_strikes_df.empty:
         st.plotly_chart(fig_pcr, use_container_width=True, config={'displayModeBar': False}, key="chart_pcr_trend")
 
     with row6_col2:
-        st.markdown("<h5 style='text-align: center;'>INDIA VIX TREND</h5>", unsafe_allow_html=True)
+        st.markdown("<h5 style='text-align: center;'>FEAR INDEX</h5>", unsafe_allow_html=True)
         fig_vix = go.Figure()
         fig_vix.add_trace(go.Scatter(
             x=st.session_state.history_df['Time_IST'], y=st.session_state.history_df['VIX'],
@@ -574,14 +574,14 @@ if not active_strikes_df.empty:
 # -------------------------------------------------------------------
 if not active_strikes_df.empty:
     st.markdown("---")
-    st.markdown("#### 🔗 Live Option Chain (ATM ± 5 Strikes)")
+    st.markdown("#### 🔗 Live Position Tracker (ATM ± 5 Strikes)")
 
     oc_required_cols = {
         'call_options.market_data.oi': 'Call OI',
         'call_chg_oi': 'Call Chg OI',
-        'call_options.market_data.ltp': 'Call LTP',
+#        'call_options.market_data.ltp': 'Call LTP',
         'strike_price': 'STRIKE',
-        'put_options.market_data.ltp': 'Put LTP',
+#        'put_options.market_data.ltp': 'Put LTP',
         'put_chg_oi': 'Put Chg OI',
         'put_options.market_data.oi': 'Put OI'
     }
