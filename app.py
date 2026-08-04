@@ -577,19 +577,19 @@ if not active_strikes_df.empty:
     st.markdown("#### 🔗 Live Position Tracker (ATM ± 5 Strikes)")
 
     oc_required_cols = {
-        'call_options.market_data.oi': '🐻 Bear Positions',
+        'call_options.market_data.oi': 'Bear Positions',
         'call_chg_oi': 'Call Chg OI',
 #        'call_options.market_data.ltp': 'Call LTP',
         'strike_price': 'STRIKE',
 #        'put_options.market_data.ltp': 'Put LTP',
         'put_chg_oi': 'Put Chg OI',
-        'put_options.market_data.oi': '🐂 Bull Positions'
+        'put_options.market_data.oi': 'Bull Positions'
     }
 
     oc_available = [c for c in oc_required_cols.keys() if c in active_strikes_df.columns]
     oc_display_df = active_strikes_df[oc_available].rename(columns=oc_required_cols)
 
-    ordered_cols = ['Call OI', 'Call Chg OI', 'Call LTP', 'STRIKE', 'Put LTP', 'Put Chg OI', 'Put OI']
+    ordered_cols = ['Bear Positions', 'Call Chg OI', 'Call LTP', 'STRIKE', 'Put LTP', 'Put Chg OI', 'Put OI']
     final_cols = [c for c in ordered_cols if c in oc_display_df.columns]
     oc_display_df = oc_display_df[final_cols]
 
