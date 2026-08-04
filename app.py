@@ -578,18 +578,18 @@ if not active_strikes_df.empty:
 
     oc_required_cols = {
         'call_options.market_data.oi': 'Bear Positions',
-        'call_chg_oi': 'Call Chg OI',
+        'call_chg_oi': 'Bear Activity',
 #        'call_options.market_data.ltp': 'Call LTP',
         'strike_price': 'STRIKE',
 #        'put_options.market_data.ltp': 'Put LTP',
-        'put_chg_oi': 'Put Chg OI',
+        'put_chg_oi': 'Bull Activity',
         'put_options.market_data.oi': 'Bull Positions'
     }
 
     oc_available = [c for c in oc_required_cols.keys() if c in active_strikes_df.columns]
     oc_display_df = active_strikes_df[oc_available].rename(columns=oc_required_cols)
 
-    ordered_cols = ['Bear Positions', 'Call Chg OI', 'Call LTP', 'STRIKE', 'Put LTP', 'Put Chg OI', 'Put OI']
+    ordered_cols = ['Bear Positions', 'Bear Activity', 'Call LTP', 'STRIKE', 'Put LTP', 'Bull Activity', 'Bull Positions']
     final_cols = [c for c in ordered_cols if c in oc_display_df.columns]
     oc_display_df = oc_display_df[final_cols]
 
@@ -607,7 +607,7 @@ if not active_strikes_df.empty:
 
         for col in row.index:
             val = row[col]
-            if col in ['Call Chg OI', 'Put Chg OI']:
+            if col in ['Bear Activity', 'Bull Activity']:
                 if val > 0:
                     styles.append('background-color: #1dc973; color: white;')
                 elif val < 0:
