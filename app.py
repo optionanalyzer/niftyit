@@ -589,7 +589,7 @@ if not active_strikes_df.empty:
     oc_available = [c for c in oc_required_cols.keys() if c in active_strikes_df.columns]
     oc_display_df = active_strikes_df[oc_available].rename(columns=oc_required_cols)
 
-    ordered_cols = ['Bear Positions', 'Bear Activity', 'Call LTP', 'STRIKE', 'Put LTP', 'Bull Activity', 'Bull Positions']
+    ordered_cols = ['Bull Positions', 'Bull Activity', 'Call LTP', 'STRIKE', 'Put LTP', 'Bear Activity', 'Bear Positions']
     final_cols = [c for c in ordered_cols if c in oc_display_df.columns]
     oc_display_df = oc_display_df[final_cols]
 
