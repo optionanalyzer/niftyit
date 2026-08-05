@@ -12,6 +12,30 @@ import plotly.graph_objects as go
 # ===================================================================
 ACCESS_TOKEN = "eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiIzTUJDMzIiLCJqdGkiOiI2YTcyYTJkMDNiNGNkODIzM2VmMmZmMDkiLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaXNQbHVzUGxhbiI6ZmFsc2UsImlhdCI6MTc4NTg5NzY4MCwiaXNzIjoidWRhcGktZ2F0ZXdheS1zZXJ2aWNlIiwiZXhwIjoxNzg1OTY3MjAwfQ.OcizjjvQBBMhGo8Df6wWsJ7gWjLQzIU2AIAM78bkzN4" 
 
+# ===================================================================
+# 📲 TELEGRAM ALERT CONFIGURATION
+# ===================================================================
+TELEGRAM_BOT_TOKEN = "8968266056:AAFlTouDWGZQInTpp3SFEZINw3Nj8YL5cxI"
+TELEGRAM_CHAT_ID = "8968266056"
+
+def send_telegram_alert(message):
+    """Fires a Telegram message asynchronously to prevent Streamlit UI lag."""
+    if TELEGRAM_BOT_TOKEN == "PASTE_YOUR_BOT_TOKEN_HERE":
+        return
+        
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message,
+        "parse_mode": "Markdown"
+    }
+    
+    try:
+        # Short timeout so it doesn't freeze the dashboard refresh cycle
+        requests.post(url, json=payload, timeout=2) 
+    except Exception:
+        pass
+        
 # -------------------------------------------------------------------
 # 0. PAGE CONFIGURATION & AUTO REFRESH
 # -------------------------------------------------------------------
@@ -611,18 +635,49 @@ if chain_df is not None and live_pcr is not None and live_pcr != 99.9:
                     st.session_state.pending_signal = raw_signal
                     st.session_state.pending_ticks = 1
                 
+                # If verified across 2 consecutive ticks (Sustained Momentum)
                 if st.session_state.pending_ticks >= 2:
                     st.session_state.active_trade = raw_signal
                     st.session_state.trade_details = {'strike': raw_strike, 'delta': raw_delta}
                     suggested_strike = raw_strike
                     target_delta = raw_delta
                     
+                    # Initialize Trailing Stop metrics
                     st.session_state.trail_dist = buffer * 1.5 
                     st.session_state.peak_spot = underlying_spot
                     if raw_signal == "CALL":
                         st.session_state.trailing_stop = underlying_spot - st.session_state.trail_dist
                     else:
                         st.session_state.trailing_stop = underlying_spot + st.session_state.trail_dist
+
+                    # =======================================================
+                    # 🚨 NEW: TELEGRAM ALERT TRIGGER & PRICE MATH
+                    # =======================================================
+                    try:
+                        strike_num = int(raw_strike.split()[0])
+                        if raw_signal == "CALL":
+                            entry_ltp = active_strikes_df.loc[active_strikes_df['strike_price'] == strike_num, 'call_options.market_data.ltp'].values[0]
+                        else:
+                            entry_ltp = active_strikes_df.loc[active_strikes_df['strike_price'] == strike_num, 'put_options.market_data.ltp'].values[0]
+                        
+                        # Apply your strict constraints (25% SL, 1:2 Risk/Reward Target)
+                        sl_price = entry_ltp * 0.75
+                        target_price = entry_ltp * 1.50
+                        
+                        alert_msg = (
+                            f"🤖 *FnO Terminal Alert: VERIFIED SETUP*\n\n"
+                            f"🟢 *Action:* BUY {raw_strike}\n"
+                            f"💰 *Entry Premium:* ₹{entry_ltp:.2f}\n\n"
+                            f"🎯 *Target Premium:* ₹{target_price:.2f} (+50%)\n"
+                            f"🛑 *Premium SL:* ₹{sl_price:.2f} (-25%)\n\n"
+                            f"📊 *Spot Trailing SL:* {st.session_state.trailing_stop:.2f}\n"
+                            f"⚙️ *Delta:* {raw_delta}"
+                        )
+                        send_telegram_alert(alert_msg)
+                    except Exception as e:
+                        # Fail silently on data extraction errors to keep engine running
+                        pass
+                    # =======================================================
 
                     st.session_state.pending_signal = None
                     st.session_state.pending_ticks = 0
