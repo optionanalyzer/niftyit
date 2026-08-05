@@ -8,7 +8,7 @@ from streamlit_autorefresh import st_autorefresh
 import plotly.graph_objects as go
 
 # ===================================================================
-# ⚠️ HARDCODE YOUR ACCESS TOKEN HERE
+# ⚠️ HARDCODE YOUR ACCESS TOKEN HERE (8968266056:AAFlTouDWGZQInTpp3SFEZINw3Nj8YL5cxI - HTTP/API/Telegram(8968266056))
 # ===================================================================
 ACCESS_TOKEN = "eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiIzTUJDMzIiLCJqdGkiOiI2YTcyYTJkMDNiNGNkODIzM2VmMmZmMDkiLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaXNQbHVzUGxhbiI6ZmFsc2UsImlhdCI6MTc4NTg5NzY4MCwiaXNzIjoidWRhcGktZ2F0ZXdheS1zZXJ2aWNlIiwiZXhwIjoxNzg1OTY3MjAwfQ.OcizjjvQBBMhGo8Df6wWsJ7gWjLQzIU2AIAM78bkzN4" 
 
