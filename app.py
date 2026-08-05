@@ -431,14 +431,7 @@ if not active_strikes_df.empty:
     st.markdown("---")
     bull_pct = min(max((live_pcr - 0.5) / 1.0, 0), 1) * 100
     
-    st.markdown(f"""
-    <div style="background-color:#1e1e1e; padding:15px; border-radius:10px; margin-bottom:20px;">
-        <h4 style="margin-top:0; margin-bottom:10px; color:white; font-weight:600;">MARKET SENTIMENT: {int(bull_pct)}% BULLISH</h4>
-        <div style="width:100%; background-color:#333; border-radius:8px; height:18px; overflow:hidden;">
-            <div style="width:{bull_pct}%; background-color:#3182ce; height:100%; transition: width 0.5s ease-in-out;"></div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+ 
 
     row6_col1, row6_col2 = st.columns(2)
 
