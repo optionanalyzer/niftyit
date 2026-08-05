@@ -374,7 +374,7 @@ if not active_strikes_df.empty:
     with sum_col1:
         st.markdown(f"""
         <div style="background-color:#1e1e1e; padding:12px; border-radius:8px; text-align:center; border: 1px solid #333;">
-            <p style="color:#1dc973; margin:0; font-weight:bold; font-size:12px;">AVG BULLS</p>
+            <p style="color:#1dc973; margin:0; font-weight:bold; font-size:12px; text-align:center;">AVG BULLS</p>
             <h4 style="margin:5px 0;">{int(bull_activity_avg):,}</h4>
             <div>{get_diff_html(bull_diff)}</div>
         </div>
@@ -383,7 +383,7 @@ if not active_strikes_df.empty:
     with sum_col2:
         st.markdown(f"""
         <div style="background-color:#1e1e1e; padding:12px; border-radius:8px; text-align:center; border: 1px solid #333;">
-            <p style="color:#ff4b4b; margin:0; font-weight:bold; font-size:12px;">AVG BEARS</p>
+            <p style="color:#ff4b4b; margin:0; font-weight:bold; font-size:12px; text-align:center;">AVG BEARS</p>
             <h4 style="margin:5px 0;">{int(bear_activity_avg):,}</h4>
             <div>{get_diff_html(bear_diff)}</div>
         </div>
