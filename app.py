@@ -577,13 +577,13 @@ if not active_strikes_df.empty:
     st.markdown("#### 🔗 Live Position Tracker (ATM ± 5 Strikes)")
 
     oc_required_cols = {
+        'put_options.market_data.ltp': 'Put LTP',
+        'put_chg_oi': 'Bull Activity',
+        'put_options.market_data.oi': 'Bull Positions',
+        'strike_price': 'STRIKE',
         'call_options.market_data.oi': 'Bear Positions',
         'call_chg_oi': 'Bear Activity',
-#        'call_options.market_data.ltp': 'Call LTP',
-        'strike_price': 'STRIKE',
-#        'put_options.market_data.ltp': 'Put LTP',
-        'put_chg_oi': 'Bull Activity',
-        'put_options.market_data.oi': 'Bull Positions'
+        'call_options.market_data.ltp': 'Call LTP'       
     }
 
     oc_available = [c for c in oc_required_cols.keys() if c in active_strikes_df.columns]
