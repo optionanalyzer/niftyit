@@ -338,7 +338,28 @@ if not active_strikes_df.empty:
     styled_oc = oc_display_df.style.apply(style_oc_table, axis=1).format(format_dict)
     st.dataframe(styled_oc, use_container_width=True, hide_index=True, height=430)
 
-
+    # --- NEW SUMMARY ROW (ACTIVITY AVERAGES) ---
+    bull_activity_avg = oc_display_df['Bull Activity'].sum() / 11
+    bear_activity_avg = oc_display_df['Bear Activity'].sum() / 11
+    
+    st.write("") # Tiny spacer
+    sum_col1, sum_col2 = st.columns(2)
+    
+    with sum_col1:
+        st.markdown(f"""
+        <div style="background-color:#1e1e1e; padding:12px; border-radius:8px; text-align:center; border: 1px solid #333;">
+            <p style="color:#1dc973; margin:0; font-weight:bold; font-size:12px;">AVG BULL ACTIVITY</p>
+            <h4 style="margin:0;">{int(bull_activity_avg):,}</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with sum_col2:
+        st.markdown(f"""
+        <div style="background-color:#1e1e1e; padding:12px; border-radius:8px; text-align:center; border: 1px solid #333;">
+            <p style="color:#ff4b4b; margin:0; font-weight:bold; font-size:12px;">AVG BEAR ACTIVITY</p>
+            <h4 style="margin:0;">{int(bear_activity_avg):,}</h4>
+        </div>
+        """, unsafe_allow_html=True)
 # -------------------------------------------------------------------
 # 8. POSITION BUILDUP / POSITION SHIFT
 # -------------------------------------------------------------------
@@ -430,9 +451,6 @@ if not active_strikes_df.empty:
 if not active_strikes_df.empty:
     st.markdown("---")
     bull_pct = min(max((live_pcr - 0.5) / 1.0, 0), 1) * 100
-    
- 
-
     row6_col1, row6_col2 = st.columns(2)
 
     with row6_col1:
