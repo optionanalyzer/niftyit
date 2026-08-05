@@ -275,7 +275,6 @@ if chain_df is not None and not active_strikes_df.empty:
 # ===================================================================
 # UI RENDERING - NEW LAYOUT ORDER
 # ===================================================================
-
 # -------------------------------------------------------------------
 # 7. LIVE OPTION CHAIN DYNAMIC TABLE (ATM ± 5 Strikes)
 # -------------------------------------------------------------------
@@ -338,9 +337,36 @@ if not active_strikes_df.empty:
     styled_oc = oc_display_df.style.apply(style_oc_table, axis=1).format(format_dict)
     st.dataframe(styled_oc, use_container_width=True, hide_index=True, height=430)
 
-    # --- NEW SUMMARY ROW (ACTIVITY AVERAGES) ---
+    # --- NEW SUMMARY ROW (ACTIVITY AVERAGES WITH DELTA TRACKING) ---
     bull_activity_avg = oc_display_df['Bull Activity'].sum() / 11
     bear_activity_avg = oc_display_df['Bear Activity'].sum() / 11
+
+    # Unique session state keys to reset properly if the user changes the instrument/expiry
+    state_key_bull = f"prev_bull_avg_{target_instrument_key}_{selected_expiry}"
+    state_key_bear = f"prev_bear_avg_{target_instrument_key}_{selected_expiry}"
+
+    # Initialize state if not present
+    if state_key_bull not in st.session_state:
+        st.session_state[state_key_bull] = bull_activity_avg
+    if state_key_bear not in st.session_state:
+        st.session_state[state_key_bear] = bear_activity_avg
+
+    # Calculate difference from the last recorded state
+    bull_diff = bull_activity_avg - st.session_state[state_key_bull]
+    bear_diff = bear_activity_avg - st.session_state[state_key_bear]
+
+    # Update state for the next refresh cycle
+    st.session_state[state_key_bull] = bull_activity_avg
+    st.session_state[state_key_bear] = bear_activity_avg
+
+    # Helper function to render the up/down arrows
+    def get_diff_html(diff):
+        if diff > 0:
+            return f"<span style='color:#1dc973; font-size:13px; font-weight:600;'>▲ +{int(diff):,}</span>"
+        elif diff < 0:
+            return f"<span style='color:#ff4b4b; font-size:13px; font-weight:600;'>▼ {int(diff):,}</span>"
+        else:
+            return f"<span style='color:#888888; font-size:13px; font-weight:600;'>▬ 0</span>"
     
     st.write("") # Tiny spacer
     sum_col1, sum_col2 = st.columns(2)
@@ -349,7 +375,8 @@ if not active_strikes_df.empty:
         st.markdown(f"""
         <div style="background-color:#1e1e1e; padding:12px; border-radius:8px; text-align:center; border: 1px solid #333;">
             <p style="color:#1dc973; margin:0; font-weight:bold; font-size:12px;">AVG BULL ACTIVITY</p>
-            <h4 style="margin:0;">{int(bull_activity_avg):,}</h4>
+            <h4 style="margin:5px 0;">{int(bull_activity_avg):,}</h4>
+            <div>{get_diff_html(bull_diff)}</div>
         </div>
         """, unsafe_allow_html=True)
         
@@ -357,7 +384,8 @@ if not active_strikes_df.empty:
         st.markdown(f"""
         <div style="background-color:#1e1e1e; padding:12px; border-radius:8px; text-align:center; border: 1px solid #333;">
             <p style="color:#ff4b4b; margin:0; font-weight:bold; font-size:12px;">AVG BEAR ACTIVITY</p>
-            <h4 style="margin:0;">{int(bear_activity_avg):,}</h4>
+            <h4 style="margin:5px 0;">{int(bear_activity_avg):,}</h4>
+            <div>{get_diff_html(bear_diff)}</div>
         </div>
         """, unsafe_allow_html=True)
 # -------------------------------------------------------------------
