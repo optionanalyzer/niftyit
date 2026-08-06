@@ -34,6 +34,13 @@ def send_telegram_alert(message):
         requests.post(url, json=payload, timeout=2) 
     except Exception:
         pass
+
+# ===================================================================
+# 🚀 INITIALIZATION ALERT
+# ===================================================================
+if 'app_started_alert_sent' not in st.session_state:
+    send_telegram_alert("🚀 *FnO Terminal Started Successfully*")
+    st.session_state.app_started_alert_sent = True
         
 # -------------------------------------------------------------------
 # 0. PAGE CONFIGURATION & AUTO REFRESH
