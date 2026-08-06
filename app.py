@@ -16,7 +16,7 @@ ACCESS_TOKEN = "eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.e
 # 📲 TELEGRAM ALERT CONFIGURATION
 # ===================================================================
 TELEGRAM_BOT_TOKEN = "8968266056:AAFlTouDWGZQInTpp3SFEZINw3Nj8YL5cxI"
-TELEGRAM_CHAT_ID = "8968266056"
+TELEGRAM_CHAT_ID = "783069669"
 
 def send_telegram_alert(message):
     """Fires a Telegram message asynchronously to prevent Streamlit UI lag."""
