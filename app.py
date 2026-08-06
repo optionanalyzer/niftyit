@@ -539,9 +539,6 @@ if chain_df is not None and live_pcr is not None and live_pcr != 99.9:
     st.markdown("#### 🤖 Aggressive Scalp Engine")
 
     # --- ENHANCED STATE MANAGEMENT ---
-    if 'prev_pcr' not in st.session_state: st.session_state.prev_pcr = micro_pcr
-    if 'prev_vix' not in st.session_state: st.session_state.prev_vix = current_vix
-    
     if 'active_trade' not in st.session_state: st.session_state.active_trade = None
     if 'trade_details' not in st.session_state: st.session_state.trade_details = {}
     
@@ -553,19 +550,62 @@ if chain_df is not None and live_pcr is not None and live_pcr != 99.9:
     if 'entry_spot' not in st.session_state: st.session_state.entry_spot = 0
     if 'trail_dist' not in st.session_state: st.session_state.trail_dist = 0
 
-    # 1. Trend Calculations
-    pcr_diff = micro_pcr - st.session_state.prev_pcr
-    if pcr_diff > 0.01: pcr_trend = "RISING ↗️"
-    elif pcr_diff < -0.01: pcr_trend = "FALLING ↘️"
-    else: pcr_trend = "FLAT ➖"
+    # 1. Advanced Trend Calculations (Hysteresis / 2-Step Confirmation)
+    if 'prev_distinct_pcr' not in st.session_state:
+        st.session_state.prev_distinct_pcr = micro_pcr
+        st.session_state.pcr_step_count = 0
+        st.session_state.confirmed_pcr_trend = "RISING ↗️" # Default fallback
+        
+    if 'prev_distinct_vix' not in st.session_state:
+        st.session_state.prev_distinct_vix = current_vix
+        st.session_state.vix_step_count = 0
+        st.session_state.confirmed_vix_trend = "FALLING ↘️" # Default fallback
 
-    vix_diff = current_vix - st.session_state.prev_vix
-    if vix_diff > 0.2: vix_trend = "RISING ↗️"
-    elif vix_diff < -0.2: vix_trend = "FALLING ↘️"
-    else: vix_trend = "FLAT ➖"
+    # --- PCR Step Logic ---
+    if micro_pcr > st.session_state.prev_distinct_pcr:
+        if st.session_state.pcr_step_count > 0:
+            st.session_state.pcr_step_count += 1
+        else:
+            st.session_state.pcr_step_count = 1
+        st.session_state.prev_distinct_pcr = micro_pcr
+        
+    elif micro_pcr < st.session_state.prev_distinct_pcr:
+        if st.session_state.pcr_step_count < 0:
+            st.session_state.pcr_step_count -= 1
+        else:
+            st.session_state.pcr_step_count = -1
+        st.session_state.prev_distinct_pcr = micro_pcr
 
-    st.session_state.prev_pcr = micro_pcr
-    st.session_state.prev_vix = current_vix
+    # Apply PCR Trend Change ONLY if 2 consecutive steps occur
+    if st.session_state.pcr_step_count >= 2:
+        st.session_state.confirmed_pcr_trend = "RISING ↗️"
+    elif st.session_state.pcr_step_count <= -2:
+        st.session_state.confirmed_pcr_trend = "FALLING ↘️"
+
+    # --- VIX Step Logic ---
+    if current_vix > st.session_state.prev_distinct_vix:
+        if st.session_state.vix_step_count > 0:
+            st.session_state.vix_step_count += 1
+        else:
+            st.session_state.vix_step_count = 1
+        st.session_state.prev_distinct_vix = current_vix
+        
+    elif current_vix < st.session_state.prev_distinct_vix:
+        if st.session_state.vix_step_count < 0:
+            st.session_state.vix_step_count -= 1
+        else:
+            st.session_state.vix_step_count = -1
+        st.session_state.prev_distinct_vix = current_vix
+
+    # Apply VIX Trend Change ONLY if 2 consecutive steps occur
+    if st.session_state.vix_step_count >= 2:
+        st.session_state.confirmed_vix_trend = "RISING ↗️"
+    elif st.session_state.vix_step_count <= -2:
+        st.session_state.confirmed_vix_trend = "FALLING ↘️"
+
+    # Lock in the trends for the engine (NO FLAT STATE)
+    pcr_trend = st.session_state.confirmed_pcr_trend
+    vix_trend = st.session_state.confirmed_vix_trend
 
     # 2. Dynamic Buffer Calculation
     try:
