@@ -555,13 +555,13 @@ if chain_df is not None and live_pcr is not None and live_pcr != 99.9:
 
     # 1. Trend Calculations
     pcr_diff = micro_pcr - st.session_state.prev_pcr
-    if pcr_diff > 0.02: pcr_trend = "RISING ↗️"
-    elif pcr_diff < -0.02: pcr_trend = "FALLING ↘️"
+    if pcr_diff > 0.01: pcr_trend = "RISING ↗️"
+    elif pcr_diff < -0.01: pcr_trend = "FALLING ↘️"
     else: pcr_trend = "FLAT ➖"
 
     vix_diff = current_vix - st.session_state.prev_vix
-    if vix_diff > 0.1: vix_trend = "RISING ↗️"
-    elif vix_diff < -0.1: vix_trend = "FALLING ↘️"
+    if vix_diff > 0.2: vix_trend = "RISING ↗️"
+    elif vix_diff < -0.2: vix_trend = "FALLING ↘️"
     else: vix_trend = "FLAT ➖"
 
     st.session_state.prev_pcr = micro_pcr
