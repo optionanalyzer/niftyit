@@ -880,15 +880,11 @@ if not active_strikes_df.empty:
     # Update memory for the next 15-second refresh cycle
     st.session_state[state_key_greeks] = new_greeks_state
     
-    # 4. Apply dynamic CSS colors and CENTER alignment based on the arrows
+    # 4. Apply dynamic CSS colors based on the arrows
     def style_greeks(row):
         styles = []
         is_atm = row['STRIKE'] == int(atm_strike)
-        
-        # Globally apply text-align center to all cells in the row
-        base_style = 'text-align: center; '
-        if is_atm:
-            base_style += 'background-color: rgba(255, 255, 0, 0.2); '
+        base_style = 'background-color: rgba(255, 255, 0, 0.2); ' if is_atm else ''
         
         for col in row.index:
             if col == 'STRIKE':
@@ -905,7 +901,17 @@ if not active_strikes_df.empty:
         return styles
 
     styled_greeks = visual_greeks_df.style.apply(style_greeks, axis=1)
-    st.dataframe(styled_greeks, use_container_width=True, hide_index=True, height=430)
+    
+    # --- NEW: Streamlit Column Configuration for hard Center Alignment ---
+    center_alignment = {col: st.column_config.Column(alignment="center") for col in visual_greeks_df.columns}
+
+    st.dataframe(
+        styled_greeks, 
+        use_container_width=True, 
+        hide_index=True, 
+        height=430,
+        column_config=center_alignment
+    )
     
 elif ACCESS_TOKEN == "YOUR_UPSTOX_ACCESS_TOKEN_HERE":
     st.warning("Please hardcode your valid Upstox Access Token at the top of the script code.")
