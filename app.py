@@ -217,7 +217,7 @@ with col5:
     st.metric(label="INDIA VIX", value=live_vix)
 
 # -------------------------------------------------------------------
-# 5. ROLLING INTRADAY OI & PREMIUM MOMENTUM TRACKER (3-Minute Auto-Window)
+# 5. ROLLING INTRADAY OI MOMENTUM TRACKER (3-Minute Auto-Window)
 # -------------------------------------------------------------------
 import time
 
@@ -235,14 +235,12 @@ if not active_strikes_df.empty:
     current_timestamp = time.time()
     current_snapshot = {}
 
-    # 2. Capture the current exact micro-state of OI AND Premium (LTP)
+    # 2. Capture the current exact micro-state of the Option Chain
     for index, row in active_strikes_df.iterrows():
         strike = row['strike_price']
         current_snapshot[strike] = {
             'call_oi': row.get('call_options.market_data.oi', 0),
-            'put_oi': row.get('put_options.market_data.oi', 0),
-            'call_ltp': row.get('call_options.market_data.ltp', 0.0),
-            'put_ltp': row.get('put_options.market_data.ltp', 0.0)
+            'put_oi': row.get('put_options.market_data.oi', 0)
         }
 
     # 3. Append to our rolling memory
@@ -252,44 +250,35 @@ if not active_strikes_df.empty:
     })
 
     # 4. THE MAGIC: Purge any data older than 3 minutes (180 seconds)
+    # Adjust the 180 below if you want a 5-min (300) or 1-min (60) window
     lookback_window = 180 
     st.session_state.oi_rolling_history = [
         snap for snap in st.session_state.oi_rolling_history 
         if current_timestamp - snap['time'] <= lookback_window
     ]
 
-    # 5. The baseline is always dynamically anchored to the oldest snapshot
+    # 5. The baseline is always dynamically anchored to the oldest snapshot in the window
     baseline_snapshot = st.session_state.oi_rolling_history[0]['data']
 
     call_chg_list = []
     put_chg_list = []
-    call_ltp_shift = []
-    put_ltp_shift = []
 
     for index, row in active_strikes_df.iterrows():
         strike = row['strike_price']
+        curr_call = row.get('call_options.market_data.oi', 0)
+        curr_put = row.get('put_options.market_data.oi', 0)
         
-        curr_call_oi = row.get('call_options.market_data.oi', 0)
-        curr_put_oi = row.get('put_options.market_data.oi', 0)
-        curr_call_ltp = row.get('call_options.market_data.ltp', 0.0)
-        curr_put_ltp = row.get('put_options.market_data.ltp', 0.0)
+        # Fallback to current OI if the strike is newly active and wasn't in the baseline
+        base_call = baseline_snapshot.get(strike, {}).get('call_oi', curr_call)
+        base_put = baseline_snapshot.get(strike, {}).get('put_oi', curr_put)
         
-        # Fallback to current values if the strike is newly active
-        base_call_oi = baseline_snapshot.get(strike, {}).get('call_oi', curr_call_oi)
-        base_put_oi = baseline_snapshot.get(strike, {}).get('put_oi', curr_put_oi)
-        base_call_ltp = baseline_snapshot.get(strike, {}).get('call_ltp', curr_call_ltp)
-        base_put_ltp = baseline_snapshot.get(strike, {}).get('put_ltp', curr_put_ltp)
+        call_chg_list.append(curr_call - base_call)
+        put_chg_list.append(curr_put - base_put)
         
-        call_chg_list.append(curr_call_oi - base_call_oi)
-        put_chg_list.append(curr_put_oi - base_put_oi)
-        call_ltp_shift.append(curr_call_ltp - base_call_ltp)
-        put_ltp_shift.append(curr_put_ltp - base_put_ltp)
-        
-    # Attach rolling data globally
+    # Attach rolling data globally for the rest of the app to use
     active_strikes_df['call_chg_oi'] = call_chg_list
     active_strikes_df['put_chg_oi'] = put_chg_list
-    active_strikes_df['call_chg_ltp'] = call_ltp_shift
-    active_strikes_df['put_chg_ltp'] = put_ltp_shift
+
 # -------------------------------------------------------------------
 # 6. GLOBAL DATA PREPARATION 
 # -------------------------------------------------------------------
@@ -359,24 +348,23 @@ if chain_df is not None and not active_strikes_df.empty:
 # -------------------------------------------------------------------
 if not active_strikes_df.empty:
     st.markdown("---")
-    st.markdown("#### 🔗 Rolling Position Tracker (3-Min OI & Premium Velocity)")
+    
+    st.markdown("#### 🔗 Rolling Position Tracker (3-Min Shift)")
 
     oc_required_cols = {
         'put_options.market_data.ltp': 'Put LTP',
-        'put_chg_ltp': 'Put LTP Shift',
-        'put_chg_oi': 'Bull OI Shift',
+        'put_chg_oi': 'Bull Activity',
         'put_options.market_data.oi': 'Bull Positions',
         'strike_price': 'STRIKE',
         'call_options.market_data.oi': 'Bear Positions',
-        'call_chg_oi': 'Bear OI Shift',
-        'call_chg_ltp': 'Call LTP Shift',
+        'call_chg_oi': 'Bear Activity',
         'call_options.market_data.ltp': 'Call LTP'        
     }
 
     oc_available = [c for c in oc_required_cols.keys() if c in active_strikes_df.columns]
     oc_display_df = active_strikes_df[oc_available].rename(columns=oc_required_cols)
 
-    ordered_cols = ['Bull Positions', 'Put LTP Shift', 'Bull OI Shift', 'Call LTP', 'STRIKE', 'Put LTP', 'Bear OI Shift', 'Call LTP Shift', 'Bear Positions']
+    ordered_cols = ['Bull Positions', 'Bull Activity', 'Call LTP', 'STRIKE', 'Put LTP', 'Bear Activity', 'Bear Positions']
     final_cols = [c for c in ordered_cols if c in oc_display_df.columns]
     oc_display_df = oc_display_df[final_cols]
 
@@ -386,24 +374,15 @@ if not active_strikes_df.empty:
     def style_oc_table(row):
         styles = []
         is_atm = (row['STRIKE'] == atm_strike)
-        base_style = 'text-align: center; '
-        if is_atm:
-            base_style += 'background-color: rgba(255, 255, 0, 0.2); '
+        base_style = 'background-color: rgba(66, 153, 225, 0.3);' if is_atm else ''
 
         for col in row.index:
             val = row[col]
-            if col in ['Bear OI Shift', 'Bull OI Shift']:
+            if col in ['Bear Activity', 'Bull Activity']:
                 if val > 0:
-                    styles.append(base_style + 'background-color: #1dc973; color: white; font-weight: 600;')
+                    styles.append('background-color: #1dc973; color: white;')
                 elif val < 0:
-                    styles.append(base_style + 'background-color: #ff4b4b; color: white; font-weight: 600;')
-                else:
-                    styles.append(base_style)
-            elif col in ['Put LTP Shift', 'Call LTP Shift']:
-                if val > 0:
-                    styles.append(base_style + 'color: #1dc973; font-weight: bold;')
-                elif val < 0:
-                    styles.append(base_style + 'color: #ff4b4b; font-weight: bold;')
+                    styles.append('background-color: #ff4b4b; color: white;')
                 else:
                     styles.append(base_style)
             else:
@@ -414,18 +393,11 @@ if not active_strikes_df.empty:
         if val > 0: return f"+{int(val)}"
         elif val < 0: return f"{int(val)}"
         else: return "0"
-        
-    def format_ltp_shift(val):
-        if val > 0: return f"+{val:.2f}"
-        elif val < 0: return f"{val:.2f}"
-        else: return "0.00"
 
     format_dict = {}
     for c in final_cols:
-        if 'OI Shift' in c:
+        if 'Chg OI' in c:
             format_dict[c] = format_chg
-        elif 'LTP Shift' in c:
-            format_dict[c] = format_ltp_shift
         elif 'LTP' in c:
             format_dict[c] = '{:.2f}'
         else:
@@ -433,7 +405,7 @@ if not active_strikes_df.empty:
 
     styled_oc = oc_display_df.style.apply(style_oc_table, axis=1).format(format_dict)
     
-    # Force Header Center Alignment via Pandas Styler CSS
+    # --- NEW: Force Header Center Alignment via Pandas Styler CSS ---
     styled_oc = styled_oc.set_table_styles([
         dict(selector='th', props=[('text-align', 'center !important')])
     ], overwrite=False)
@@ -450,24 +422,28 @@ if not active_strikes_df.empty:
     )
 
     # --- SUMMARY ROW (ACTIVITY AVERAGES WITH DELTA TRACKING) ---
-    bull_activity_avg = oc_display_df['Bull OI Shift'].sum() / 11
-    bear_activity_avg = oc_display_df['Bear OI Shift'].sum() / 11
+    bull_activity_avg = oc_display_df['Bull Activity'].sum() / 11
+    bear_activity_avg = oc_display_df['Bear Activity'].sum() / 11
 
-    # Unique session state keys
+    # Unique session state keys to reset properly if the user changes the instrument/expiry
     state_key_bull = f"prev_bull_avg_{target_instrument_key}_{selected_expiry}"
     state_key_bear = f"prev_bear_avg_{target_instrument_key}_{selected_expiry}"
 
+    # Initialize state if not present
     if state_key_bull not in st.session_state:
         st.session_state[state_key_bull] = bull_activity_avg
     if state_key_bear not in st.session_state:
         st.session_state[state_key_bear] = bear_activity_avg
 
+    # Calculate difference from the last recorded state
     bull_diff = bull_activity_avg - st.session_state[state_key_bull]
     bear_diff = bear_activity_avg - st.session_state[state_key_bear]
 
+    # Update state for the next refresh cycle
     st.session_state[state_key_bull] = bull_activity_avg
     st.session_state[state_key_bear] = bear_activity_avg
 
+    # Helper function to render the up/down arrows
     def get_diff_html(diff):
         if diff > 0:
             return f"<span style='color:#1dc973; font-size:13px; font-weight:600;'>▲ +{int(diff):,}</span>"
@@ -476,7 +452,7 @@ if not active_strikes_df.empty:
         else:
             return f"<span style='color:#888888; font-size:13px; font-weight:600;'>▬ 0</span>"
     
-    st.write("") 
+    st.write("") # Tiny spacer
     sum_col1, sum_col2 = st.columns(2)
     
     with sum_col1:
@@ -496,6 +472,7 @@ if not active_strikes_df.empty:
             <div>{get_diff_html(bear_diff)}</div>
         </div>
         """, unsafe_allow_html=True)
+
 # -------------------------------------------------------------------
 # 8. POSITION BUILDUP / POSITION SHIFT
 # -------------------------------------------------------------------
