@@ -769,8 +769,8 @@ if chain_df is not None and live_pcr is not None and live_pcr != 99.9:
                         else:
                             entry_ltp = active_strikes_df.loc[active_strikes_df['strike_price'] == strike_num, 'put_options.market_data.ltp'].values[0]
                         
-                        sl_price = entry_ltp * 0.75
-                        target_price = entry_ltp * 1.50
+                        sl_price = entry_ltp * 0.90
+                        target_price = entry_ltp * 1.10
                         
                         alert_msg = (
                             f"⚡ *SCALP ALERT: VERIFIED SETUP*\n\n"
