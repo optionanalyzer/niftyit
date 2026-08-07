@@ -309,7 +309,15 @@ if chain_df is not None and not active_strikes_df.empty:
 # -------------------------------------------------------------------
 if not active_strikes_df.empty:
     st.markdown("---")
-    st.markdown("#### 🔗 Live Position Tracker (ATM ± 5 Strikes)")
+    
+    # --- NEW: Layout for Title and Reset Button ---
+    col_title, col_reset = st.columns([4, 1])
+    with col_title:
+        st.markdown("#### 🔗 Live Position Tracker (ATM ± 5 Strikes)")
+    with col_reset:
+        if st.button("🔄 Reset Shift Baselines", use_container_width=True):
+            st.session_state.oi_baselines = {}
+            st.rerun()
 
     oc_required_cols = {
         'put_options.market_data.ltp': 'Put LTP',
@@ -366,7 +374,7 @@ if not active_strikes_df.empty:
     styled_oc = oc_display_df.style.apply(style_oc_table, axis=1).format(format_dict)
     st.dataframe(styled_oc, use_container_width=True, hide_index=True, height=430)
 
-    # --- NEW SUMMARY ROW (ACTIVITY AVERAGES WITH DELTA TRACKING) ---
+    # --- SUMMARY ROW (ACTIVITY AVERAGES WITH DELTA TRACKING) ---
     bull_activity_avg = oc_display_df['Bull Activity'].sum() / 11
     bear_activity_avg = oc_display_df['Bear Activity'].sum() / 11
 
@@ -417,7 +425,6 @@ if not active_strikes_df.empty:
             <div>{get_diff_html(bear_diff)}</div>
         </div>
         """, unsafe_allow_html=True)
-
 # -------------------------------------------------------------------
 # 8. POSITION BUILDUP / POSITION SHIFT
 # -------------------------------------------------------------------
