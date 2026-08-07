@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 # ===================================================================
 # ⚠️ HARDCODE YOUR ACCESS TOKEN HERE 
 # ===================================================================
-ACCESS_TOKEN = "eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiIzTUJDMzIiLCJqdGkiOiI2YTczZjQ2OTAxM2UzOTU4MzJlMjYzYjEiLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaXNQbHVzUGxhbiI6ZmFsc2UsImlhdCI6MTc4NTk4NDEwNSwiaXNzIjoidWRhcGktZ2F0ZXdheS1zZXJ2aWNlIiwiZXhwIjoxNzg2MDUzNjAwfQ.ZGTuh6bthRlDBfjSQE-H_bz8SS894tu_YXoQQ3sP2Rs" 
+ACCESS_TOKEN = "eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiIzTUJDMzIiLCJqdGkiOiI2YTc1NGVjMTdmZDBhOTQ2ODkyZTc5N2QiLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaXNQbHVzUGxhbiI6ZmFsc2UsImlhdCI6MTc4NjA3Mjc2OSwiaXNzIjoidWRhcGktZ2F0ZXdheS1zZXJ2aWNlIiwiZXhwIjoxNzg2MTQwMDAwfQ.9sVQbkro78JaiU7H2HLugJqaFgB-xV7SnH2wQyLx6fw" 
 
 # ===================================================================
 # 📲 TELEGRAM ALERT CONFIGURATION
