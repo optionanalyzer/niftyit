@@ -217,34 +217,67 @@ with col5:
     st.metric(label="INDIA VIX", value=live_vix)
 
 # -------------------------------------------------------------------
-# 5. INTRADAY OI CHANGE TRACKER (Attached to Active Strikes)
+# 5. ROLLING INTRADAY OI MOMENTUM TRACKER (3-Minute Auto-Window)
 # -------------------------------------------------------------------
+import time
+
 if not active_strikes_df.empty:
-    if 'oi_baselines' not in st.session_state:
-        st.session_state.oi_baselines = {}
-        
     state_prefix = f"{target_instrument_key}_{selected_expiry}"
+    
+    # 1. Reset memory cleanly if you switch instruments or expiries
+    if st.session_state.get('oi_instrument_tracker') != state_prefix:
+        st.session_state.oi_rolling_history = []
+        st.session_state.oi_instrument_tracker = state_prefix
+
+    if 'oi_rolling_history' not in st.session_state:
+        st.session_state.oi_rolling_history = []
+        
+    current_timestamp = time.time()
+    current_snapshot = {}
+
+    # 2. Capture the current exact micro-state of the Option Chain
+    for index, row in active_strikes_df.iterrows():
+        strike = row['strike_price']
+        current_snapshot[strike] = {
+            'call_oi': row.get('call_options.market_data.oi', 0),
+            'put_oi': row.get('put_options.market_data.oi', 0)
+        }
+
+    # 3. Append to our rolling memory
+    st.session_state.oi_rolling_history.append({
+        'time': current_timestamp,
+        'data': current_snapshot
+    })
+
+    # 4. THE MAGIC: Purge any data older than 3 minutes (180 seconds)
+    # Adjust the 180 below if you want a 5-min (300) or 1-min (60) window
+    lookback_window = 180 
+    st.session_state.oi_rolling_history = [
+        snap for snap in st.session_state.oi_rolling_history 
+        if current_timestamp - snap['time'] <= lookback_window
+    ]
+
+    # 5. The baseline is always dynamically anchored to the oldest snapshot in the window
+    baseline_snapshot = st.session_state.oi_rolling_history[0]['data']
+
     call_chg_list = []
     put_chg_list = []
 
     for index, row in active_strikes_df.iterrows():
         strike = row['strike_price']
-        current_call_oi = row.get('call_options.market_data.oi', 0)
-        current_put_oi = row.get('put_options.market_data.oi', 0)
+        curr_call = row.get('call_options.market_data.oi', 0)
+        curr_put = row.get('put_options.market_data.oi', 0)
         
-        dict_key = f"{state_prefix}_{strike}"
+        # Fallback to current OI if the strike is newly active and wasn't in the baseline
+        base_call = baseline_snapshot.get(strike, {}).get('call_oi', curr_call)
+        base_put = baseline_snapshot.get(strike, {}).get('put_oi', curr_put)
         
-        if dict_key not in st.session_state.oi_baselines:
-            st.session_state.oi_baselines[dict_key] = {'call_oi': current_call_oi, 'put_oi': current_put_oi}
-            
-        baseline = st.session_state.oi_baselines[dict_key]
-        call_chg_list.append(current_call_oi - baseline['call_oi'])
-        put_chg_list.append(current_put_oi - baseline['put_oi'])
+        call_chg_list.append(curr_call - base_call)
+        put_chg_list.append(curr_put - base_put)
         
-    # Attach data globally
+    # Attach rolling data globally for the rest of the app to use
     active_strikes_df['call_chg_oi'] = call_chg_list
     active_strikes_df['put_chg_oi'] = put_chg_list
-
 # -------------------------------------------------------------------
 # 6. GLOBAL DATA PREPARATION 
 # -------------------------------------------------------------------
@@ -314,14 +347,7 @@ if chain_df is not None and not active_strikes_df.empty:
 if not active_strikes_df.empty:
     st.markdown("---")
     
-    # Layout for Title and Reset Button
-    col_title, col_reset = st.columns([4, 1])
-    with col_title:
-        st.markdown("#### 🔗 Live Position Tracker (ATM ± 5 Strikes)")
-    with col_reset:
-        if st.button("🔄 Reset Shift Baselines", use_container_width=True):
-            st.session_state.oi_baselines = {}
-            st.rerun()
+    st.markdown("#### 🔗 Rolling Position Tracker (3-Min Shift)")
 
     oc_required_cols = {
         'put_options.market_data.ltp': 'Put LTP',
