@@ -808,7 +808,6 @@ if chain_df is not None and live_pcr is not None and live_pcr != 99.9:
             st.session_state.pending_ticks = 0
             st.rerun()
 
-
 # -------------------------------------------------------------------
 # 12. INTERACTIVE OPTION GREEKS TABLE
 # -------------------------------------------------------------------
@@ -836,8 +835,9 @@ if not active_strikes_df.empty:
     new_greeks_state = {}
     
     # 3. Create a formatted dataframe to hold the strings with arrows
-    visual_greeks_df = base_greeks_df.copy()
-    visual_greeks_df['STRIKE'] = visual_greeks_df['STRIKE'].astype(int) # Clean up strike display
+    # FIX: Convert the columns to 'object' dtype so Pandas allows string injection
+    visual_greeks_df = base_greeks_df.astype(object)
+    visual_greeks_df['STRIKE'] = visual_greeks_df['STRIKE'].astype(int) 
     
     greek_metrics = ['Call Delta', 'Call Gamma', 'Call Theta', 'Put Delta', 'Put Gamma', 'Put Theta']
     
