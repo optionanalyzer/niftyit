@@ -314,7 +314,7 @@ if chain_df is not None and not active_strikes_df.empty:
 if not active_strikes_df.empty:
     st.markdown("---")
     
-    # --- NEW: Layout for Title and Reset Button ---
+    # Layout for Title and Reset Button
     col_title, col_reset = st.columns([4, 1])
     with col_title:
         st.markdown("#### 🔗 Live Position Tracker (ATM ± 5 Strikes)")
@@ -376,7 +376,17 @@ if not active_strikes_df.empty:
             format_dict[c] = '{:.0f}'
 
     styled_oc = oc_display_df.style.apply(style_oc_table, axis=1).format(format_dict)
-    st.dataframe(styled_oc, use_container_width=True, hide_index=True, height=430)
+    
+    # --- NEW: Streamlit Column Configuration for hard Center Alignment ---
+    center_alignment_oc = {col: st.column_config.Column(alignment="center") for col in oc_display_df.columns}
+
+    st.dataframe(
+        styled_oc, 
+        use_container_width=True, 
+        hide_index=True, 
+        height=430,
+        column_config=center_alignment_oc
+    )
 
     # --- SUMMARY ROW (ACTIVITY AVERAGES WITH DELTA TRACKING) ---
     bull_activity_avg = oc_display_df['Bull Activity'].sum() / 11
