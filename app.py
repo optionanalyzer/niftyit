@@ -819,11 +819,73 @@ if not active_strikes_df.empty:
     
     st.markdown(f"#### Option Greek | ⏱️ {current_time_ist_str}")
     
-    def highlight_atm(row):
-        is_atm = row['STRIKE'] == atm_strike
-        return ['background-color: rgba(255, 255, 0, 0.2)' if is_atm else ''] * len(row)
+    # 1. Filter out IV and Vega for the visual display
+    display_cols = [
+        'Call Delta', 'Call Gamma', 'Call Theta', 
+        'STRIKE', 
+        'Put Delta', 'Put Gamma', 'Put Theta'
+    ]
+    base_greeks_df = greeks_display_df[display_cols].copy()
+    
+    # 2. State management to track previous Greek values
+    state_key_greeks = f"prev_greeks_{target_instrument_key}_{selected_expiry}"
+    if state_key_greeks not in st.session_state:
+        st.session_state[state_key_greeks] = {}
+        
+    prev_greeks = st.session_state[state_key_greeks]
+    new_greeks_state = {}
+    
+    # 3. Create a formatted dataframe to hold the strings with arrows
+    visual_greeks_df = base_greeks_df.copy()
+    visual_greeks_df['STRIKE'] = visual_greeks_df['STRIKE'].astype(int) # Clean up strike display
+    
+    greek_metrics = ['Call Delta', 'Call Gamma', 'Call Theta', 'Put Delta', 'Put Gamma', 'Put Theta']
+    
+    for idx, row in base_greeks_df.iterrows():
+        strike = int(row['STRIKE'])
+        new_greeks_state[strike] = {}
+        
+        for col in greek_metrics:
+            curr_val = row[col]
+            new_greeks_state[strike][col] = curr_val
+            
+            # Compare with previous reading and inject arrows
+            if strike in prev_greeks and col in prev_greeks[strike]:
+                prev_val = prev_greeks[strike][col]
+                if curr_val > prev_val:
+                    visual_greeks_df.at[idx, col] = f"▲ {curr_val:.4f}"
+                elif curr_val < prev_val:
+                    visual_greeks_df.at[idx, col] = f"▼ {curr_val:.4f}"
+                else:
+                    visual_greeks_df.at[idx, col] = f"{curr_val:.4f}"
+            else:
+                # First run initialization (no arrows yet)
+                visual_greeks_df.at[idx, col] = f"{curr_val:.4f}"
+                
+    # Update memory for the next 15-second refresh cycle
+    st.session_state[state_key_greeks] = new_greeks_state
+    
+    # 4. Apply dynamic CSS colors based on the arrows
+    def style_greeks(row):
+        styles = []
+        is_atm = row['STRIKE'] == int(atm_strike)
+        base_style = 'background-color: rgba(255, 255, 0, 0.2); ' if is_atm else ''
+        
+        for col in row.index:
+            if col == 'STRIKE':
+                styles.append(base_style + 'font-weight: bold; text-align: center;')
+                continue
+                
+            val = str(row[col])
+            if val.startswith('▲'):
+                styles.append(base_style + 'color: #1dc973; font-weight: 600;')
+            elif val.startswith('▼'):
+                styles.append(base_style + 'color: #ff4b4b; font-weight: 600;')
+            else:
+                styles.append(base_style)
+        return styles
 
-    styled_greeks = greeks_display_df.style.apply(highlight_atm, axis=1).format(precision=4)
+    styled_greeks = visual_greeks_df.style.apply(style_greeks, axis=1)
     st.dataframe(styled_greeks, use_container_width=True, hide_index=True, height=430)
     
 elif ACCESS_TOKEN == "YOUR_UPSTOX_ACCESS_TOKEN_HERE":
