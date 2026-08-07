@@ -818,15 +818,27 @@ if not active_strikes_df.empty:
     
     st.markdown(f"#### Option Greek | ⏱️ {current_time_ist_str}")
     
-    # 1. Filter out IV and Vega for the visual display
-    display_cols = [
-        'Call Delta', 'Call Gamma', 'Call Theta', 
-        'STRIKE', 
-        'Put Delta', 'Put Gamma', 'Put Theta'
-    ]
-    base_greeks_df = greeks_display_df[display_cols].copy()
+    # 1. Grab Base Greeks and Merge LTPs from active_strikes_df
+    greeks_cols = ['Call Delta', 'Call Gamma', 'Call Theta', 'STRIKE', 'Put Delta', 'Put Gamma', 'Put Theta']
+    base_greeks_df = greeks_display_df[greeks_cols].copy()
     
-    # 2. State management to track previous Greek values
+    ltp_df = active_strikes_df[['strike_price', 'call_options.market_data.ltp', 'put_options.market_data.ltp']].copy()
+    ltp_df.rename(columns={
+        'strike_price': 'STRIKE',
+        'call_options.market_data.ltp': 'Call LTP',
+        'put_options.market_data.ltp': 'Put LTP'
+    }, inplace=True)
+    
+    # Merge and perfectly order the columns
+    base_greeks_df = pd.merge(base_greeks_df, ltp_df, on='STRIKE', how='left')
+    display_cols = [
+        'Call Delta', 'Call Gamma', 'Call Theta', 'Call LTP', 
+        'STRIKE', 
+        'Put LTP', 'Put Delta', 'Put Gamma', 'Put Theta'
+    ]
+    base_greeks_df = base_greeks_df[display_cols]
+    
+    # 2. State management to track previous values
     state_key_greeks = f"prev_greeks_{target_instrument_key}_{selected_expiry}"
     if state_key_greeks not in st.session_state:
         st.session_state[state_key_greeks] = {}
@@ -835,45 +847,52 @@ if not active_strikes_df.empty:
     new_greeks_state = {}
     
     # 3. Create a formatted dataframe to hold the strings with arrows
-    # FIX: Convert the columns to 'object' dtype so Pandas allows string injection
+    # Convert to 'object' dtype so Pandas allows string injection
     visual_greeks_df = base_greeks_df.astype(object)
     visual_greeks_df['STRIKE'] = visual_greeks_df['STRIKE'].astype(int) 
     
-    greek_metrics = ['Call Delta', 'Call Gamma', 'Call Theta', 'Put Delta', 'Put Gamma', 'Put Theta']
+    metrics = [c for c in display_cols if c != 'STRIKE']
     
     for idx, row in base_greeks_df.iterrows():
         strike = int(row['STRIKE'])
         new_greeks_state[strike] = {}
         
-        for col in greek_metrics:
-            curr_val = row[col]
+        for col in metrics:
+            curr_val = float(row[col])
             new_greeks_state[strike][col] = curr_val
+            
+            # Dynamically format: 2 decimals for Price (LTP), 4 decimals for Greeks
+            fmt = "{:.2f}" if "LTP" in col else "{:.4f}"
             
             # Compare with previous reading and inject arrows
             if strike in prev_greeks and col in prev_greeks[strike]:
                 prev_val = prev_greeks[strike][col]
                 if curr_val > prev_val:
-                    visual_greeks_df.at[idx, col] = f"▲ {curr_val:.4f}"
+                    visual_greeks_df.at[idx, col] = f"▲ {fmt.format(curr_val)}"
                 elif curr_val < prev_val:
-                    visual_greeks_df.at[idx, col] = f"▼ {curr_val:.4f}"
+                    visual_greeks_df.at[idx, col] = f"▼ {fmt.format(curr_val)}"
                 else:
-                    visual_greeks_df.at[idx, col] = f"{curr_val:.4f}"
+                    visual_greeks_df.at[idx, col] = fmt.format(curr_val)
             else:
                 # First run initialization (no arrows yet)
-                visual_greeks_df.at[idx, col] = f"{curr_val:.4f}"
+                visual_greeks_df.at[idx, col] = fmt.format(curr_val)
                 
     # Update memory for the next 15-second refresh cycle
     st.session_state[state_key_greeks] = new_greeks_state
     
-    # 4. Apply dynamic CSS colors based on the arrows
+    # 4. Apply dynamic CSS colors and CENTER alignment based on the arrows
     def style_greeks(row):
         styles = []
         is_atm = row['STRIKE'] == int(atm_strike)
-        base_style = 'background-color: rgba(255, 255, 0, 0.2); ' if is_atm else ''
+        
+        # Globally apply text-align center to all cells in the row
+        base_style = 'text-align: center; '
+        if is_atm:
+            base_style += 'background-color: rgba(255, 255, 0, 0.2); '
         
         for col in row.index:
             if col == 'STRIKE':
-                styles.append(base_style + 'font-weight: bold; text-align: center;')
+                styles.append(base_style + 'font-weight: bold;')
                 continue
                 
             val = str(row[col])
