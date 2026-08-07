@@ -36,11 +36,15 @@ def send_telegram_alert(message):
         pass
 
 # ===================================================================
-# 🚀 INITIALIZATION ALERT
+# 🚀 INITIALIZATION ALERT (SERVER-LEVEL CACHE)
 # ===================================================================
-if 'app_started_alert_sent' not in st.session_state:
+@st.cache_resource
+def notify_server_start():
     send_telegram_alert("🚀 *FnO Terminal Started Successfully*")
-    st.session_state.app_started_alert_sent = True
+    return True
+
+# This will only execute once per server boot, completely ignoring page refreshes
+notify_server_start()
         
 # -------------------------------------------------------------------
 # 0. PAGE CONFIGURATION & AUTO REFRESH
