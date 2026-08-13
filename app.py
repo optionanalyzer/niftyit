@@ -375,6 +375,13 @@ if not active_strikes_df.empty:
         styles = []
         is_atm = (row['STRIKE'] == atm_strike)
         base_style = 'background-color: rgba(66, 153, 225, 0.3);' if is_atm else ''
+        
+        # Extract positions for comparison
+        try:
+            bull_pos = float(row['Bull Positions'])
+            bear_pos = float(row['Bear Positions'])
+        except Exception:
+            bull_pos, bear_pos = 0, 0
 
         for col in row.index:
             val = row[col]
@@ -383,6 +390,21 @@ if not active_strikes_df.empty:
                     styles.append('background-color: #1dc973; color: white;')
                 elif val < 0:
                     styles.append('background-color: #ff4b4b; color: white;')
+                else:
+                    styles.append(base_style)
+                    
+            # NEW LOGIC: Compare Positions and apply background color
+            elif col == 'Bull Positions':
+                if bull_pos > bear_pos:
+                    # Apply green background if Bull is dominant
+                    styles.append('background-color: rgba(29, 201, 115, 0.35); color: white;')
+                else:
+                    styles.append(base_style)
+                    
+            elif col == 'Bear Positions':
+                if bear_pos > bull_pos:
+                    # Apply red background if Bear is dominant
+                    styles.append('background-color: rgba(255, 75, 75, 0.35); color: white;')
                 else:
                     styles.append(base_style)
             else:
@@ -479,6 +501,7 @@ if not active_strikes_df.empty:
             <div>{get_diff_html(bear_diff)}</div>
         </div>
         """, unsafe_allow_html=True)
+
 # -------------------------------------------------------------------
 # 8. POSITION BUILDUP / POSITION SHIFT
 # -------------------------------------------------------------------
