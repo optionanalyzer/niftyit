@@ -762,17 +762,17 @@ if chain_df is not None and live_pcr is not None and live_pcr != 99.9:
 
             # --- AGGRESSIVE SCALPING ENTRY LOGIC ---
             
-            # LONG (CE) SETUP
+            # LONG (CE) SETUP - Target Delta ~ 0.65
             if (bull_avg > bear_avg) and (pcr_trend == "RISING ↗️") and (vix_trend == "FALLING ↘️") and (otm_bull_sum > otm_bear_sum):
                 raw_signal = "CALL"
-                closest_idx = (greeks_display_df['Call Delta'] - 0.55).abs().idxmin()
+                closest_idx = (greeks_display_df['Call Delta'] - 0.65).abs().idxmin()
                 raw_strike = f"{int(greeks_display_df.loc[closest_idx, 'STRIKE'])} CE"
                 raw_delta = f"{greeks_display_df.loc[closest_idx, 'Call Delta']:.4f}"
                 
-            # SHORT (PE) SETUP
+            # SHORT (PE) SETUP - Target Delta ~ -0.65
             elif (bear_avg > bull_avg) and (pcr_trend == "FALLING ↘️") and (vix_trend == "RISING ↗️") and (itm_bear_sum > itm_bull_sum):
                 raw_signal = "PUT"
-                closest_idx = (greeks_display_df['Put Delta'] - (-0.55)).abs().idxmin()
+                closest_idx = (greeks_display_df['Put Delta'] - (-0.65)).abs().idxmin()
                 raw_strike = f"{int(greeks_display_df.loc[closest_idx, 'STRIKE'])} PE"
                 raw_delta = f"{greeks_display_df.loc[closest_idx, 'Put Delta']:.4f}"
 
@@ -857,7 +857,6 @@ if chain_df is not None and live_pcr is not None and live_pcr != 99.9:
             st.session_state.pending_signal = None
             st.session_state.pending_ticks = 0
             st.rerun()
-
 # -------------------------------------------------------------------
 # 12. INTERACTIVE OPTION GREEKS TABLE
 # -------------------------------------------------------------------
